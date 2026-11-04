@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hard Mode for Hackers</title>
+<meta name="description" content="Four arcade mini-games for Cybersecurity Awareness Month.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/brand.css">
+<style>
+  .marquee { padding-top: 26px; }
+  .tagline { margin: 0 0 14px; font: 400 .72rem/1.7 var(--pixel-font); text-align: center; text-transform: uppercase; color: var(--cream); }
+  #attract { display: block; width: 100%; height: auto; aspect-ratio: 200 / 34; image-rendering: pixelated; box-shadow: 0 0 0 4px var(--ink); }
+  .pick { margin: 22px 0 16px; font: 400 .85rem/1.6 var(--pixel-font); text-align: center; text-transform: uppercase; color: var(--sun); animation: blink 1.1s steps(2) infinite; }
+  .games { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 28px; padding: 4px 8px 20px; }
+  .game {
+    --frame: var(--neon);
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 6px 14px;
+    align-items: center;
+    padding: 14px;
+    color: var(--paper);
+    text-decoration: none;
+  }
+  .game canvas { grid-row: span 3; justify-self: center; image-rendering: pixelated; }
+  .game .step { font: 400 .54rem/1.6 var(--pixel-font); text-transform: uppercase; color: var(--frame); }
+  .game h2 { margin: 0; font: 400 .9rem/1.5 var(--pixel-font); text-transform: uppercase; color: var(--sun); }
+  .game p { margin: 0; font-size: .98rem; line-height: 1.35; }
+  .game .status { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; font: 400 .58rem/1.6 var(--pixel-font); text-transform: uppercase; color: var(--cream); }
+  .game .play { color: var(--ink); background: var(--sun); padding: 6px 8px; }
+  a.game:hover, a.game:focus-visible { --frame: var(--sun); background: var(--purple); outline: none; transform: translateY(-4px); }
+  a.game:hover .play::before, a.game:focus-visible .play::before { content: "\25B6  "; }
+  .game.locked { --frame: var(--purple); }
+  .game.locked h2, .game.locked .step { color: var(--lavender); }
+  .steps-note { margin: 0 8px 10px; padding-top: 4px; text-align: center; }
+  footer { margin: 18px 8px 4px; font-size: .9rem; text-align: center; }
+  footer a { color: var(--neon); }
+  @media (max-width: 760px) {
+    .games { grid-template-columns: 1fr; padding: 4px 4px 16px; }
+    .game { grid-template-columns: 76px 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pick { animation: none; } }
+</style>
+</head>
+<body>
+<div class="cabinet">
+  <header class="marquee">
+    <h1>Hard Mode for Hackers</h1>
+  </header>
+  <p class="tagline">Don't make it easy for them</p>
+  <div class="lights" aria-hidden="true"></div>
+
+  <div class="bezel">
+    <main class="screen">
+      <canvas id="attract" width="800" height="136" role="img" aria-label="A hacker walks up to a locked door and is denied."></canvas>
+      <p class="pick">Choose your game</p>
+      <div class="games" id="games"></div>
+      <p class="steps-note">Cybersecurity Awareness Month comes down to four easy habits. Master all four and every hacker plays on hard mode.</p>
+    </main>
+  </div>
+  <footer>Made for Cybersecurity Awareness Month. 2026 theme: <a href="https://staysafeonline.org/programs/champion/" target="_blank" rel="noopener">"Don't Make It Easy for Them"</a>. Advice based on <a href="https://www.cisa.gov/secure-our-world" target="_blank" rel="noopener">CISA's Secure Our World</a>.</footer>
+</div>
+
+<script src="assets/pixel.js"></script>
+<script>
+/* =========================================================
+   THE GAMES
+   When a teammate finishes a game, fill in its name, blurb and
+   href. Nothing else on this page has to change.
+   ========================================================= */
+const GAMES = [
+  {
+    step: "Step 1: Use strong passwords", name: "Password Penetrator", href: "password-penetrator/Game.html",
+    blurb: "Swipe through the passwords the banner calls for, and dodge malware before you strike out.",
+    frame: C.lavender, scoreKeys: ["cd_hi_fn_style"],
+    art: ["..kkkkk...", ".kk...kk..", ".kk...kk..", "kkkkkkkkk.", "kkkiiikkk.", "kkkkikkkk.", "kkkkikkkk.", "kkkkkkkkk."]
+  },
+  {
+    step: "Step 2: Turn on MFA", name: "MFA Mayhem", href: "mfa-mayhem/index.html",
+    blurb: "Place MFA defenders on the grid and stop attackers before they reach your accounts.",
+    frame: C.safe, scoreKeys: ["mfaHi"],
+    art: [".iiiiiii.", ".innnnni.", ".innnnni.", ".innnnni.", ".innnnni.", ".innnnni.", ".iiikiii.", ".iiiiiii."]
+  },
+  {
+    step: "Step 3: Recognize and report phishing", name: "Real or Phish?", href: "games/real-or-phish.html",
+    blurb: "Hook fish, read their emails and spot the scams before the timer runs out.",
+    frame: C.neon, scoreKeys: ["rop-best"],
+    art: ["......ff......", "...kkkkkkkk.ff", ".kkkkkkkkkkfff", "kkiikkkkkkkkf.", "kkkkkkkkkkkkf.", ".llllllllllfff", "...lllllll..ff"]
+  },
+  {
+    step: "Step 4: Update software", name: "Patch Panic", href: "games/patch-panic.html",
+    blurb: "Blast viruses, buy upgrades and install every patch to survive 12 waves.",
+    frame: C.pop, scoreKeys: ["patch-panic-last-stand-final-standard-best", "patch-panic-last-stand-final-hard-best"],
+    art: [".f...f...f.", "..kkkkkkk..", ".kkkkkkkkk.", ".klikkklik.", "kkkkkkkkkkk", ".kkiiiiikk.", "..kkkkkkk..", ".f...f...f."]
+  }
+];
+
+const ART_COLORS = { k: C.sun, f: C.orange, i: C.ink, l: C.cream, n: C.neon };
+const LOCKED_COLORS = { k: C.lavender, i: C.ink, n: C.purple };
+
+function bestScore(keys) {
+  try {
+    return Math.max(0, ...keys.map((key) => Number(localStorage.getItem(key)) || 0));
+  } catch {
+    return 0;
+  }
+}
+
+GAMES.forEach((game) => {
+  const card = document.createElement(game.href ? "a" : "div");
+  card.className = game.href ? "game frame" : "game frame locked";
+  card.style.setProperty("--frame", game.frame);
+  if (game.href) card.href = game.href;
+
+  const icon = copySprite(makeSprite(game.art, game.href ? ART_COLORS : LOCKED_COLORS));
+  icon.style.width = `${icon.width * 5}px`;
+
+  const score = String(bestScore(game.scoreKeys)).padStart(5, "0");
+  const words = document.createElement("div");
+  words.innerHTML = `<div class="step">${game.step}</div><h2>${game.name}</h2><p>${game.blurb}</p>`;
+  const status = document.createElement("div");
+  status.className = "status";
+  status.innerHTML = game.href
+    ? `<span>Hi-score ${score}</span><span class="play">Play</span>`
+    : "<span>Teammate's game loading</span>";
+  words.style.gridRow = "span 3";
+  card.append(icon, words, status);
+  document.getElementById("games").append(card);
+});
+
+/* =========================================================
+   ATTRACT SCREEN: a hacker keeps failing to get in
+   ========================================================= */
+const attract = document.getElementById("attract").getContext("2d");
+const hacker = makeSprite([
+  "..hhhhhh..", ".hhhhhhhh.", ".hhfffffh.", ".hhfiifih.", ".hhfffffh.", "..hhhhhh..",
+  ".hhhhhhhh.", "hhhhhhhhhh", "hhhhhhhhhh", ".hhhhhhhh.", ".hhh..hhh.", ".iii..iii."
+], { h: C.purple, f: C.skin, i: C.ink });
+const door = makeSprite([
+  "wwwwwwwwwwww", "wddddddddddw", "wddddddddddw", "wddddllddddw", "wdddlddldddw",
+  "wddllllllddw", "wddllllllddw", "wddllllllddw", "wddddddddddw", "wddddddddddw",
+  "wddddddddddw", "wddddddddddw", "wddddddddddw", "wddddddddddw", "wddddddddddw", "wddddddddddw"
+], { w: C.neon, d: C.deep, l: C.sun });
+const WALK_MS = 4200;
+const stillMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function drawAttract(now) {
+  attract.setTransform(4, 0, 0, 4, 0, 0);
+  attract.imageSmoothingEnabled = false;
+  attract.fillStyle = C.indigo;
+  attract.fillRect(0, 0, 200, 34);
+  attract.fillStyle = C.night;
+  for (let x = 2; x < 200; x += 8) attract.fillRect(x, 3 + (x % 5) * 3, 3, 1);
+  attract.fillStyle = C.ink;
+  attract.fillRect(0, 30, 200, 4);
+  attract.fillStyle = C.pop;
+  for (let x = 0; x < 200; x += 8) attract.fillRect(x, 30, 4, 1);
+
+  const t = stillMotion ? 1 : (now % WALK_MS) / WALK_MS;
+  const walking = Math.min(1, t / 0.6);
+  const x = 20 + walking * 118;
+  const denied = t > 0.6;
+  attract.drawImage(door, 150, 13);
+  attract.drawImage(hacker, Math.round(x), 16 + (!denied && Math.floor(now / 140) % 2 ? 1 : 0));
+
+  attract.font = '8px "Press Start 2P", monospace';
+  attract.textAlign = "right";
+  attract.fillStyle = C.danger;
+  if (denied && Math.floor(now / 250) % 2 === 0 || stillMotion) attract.fillText("ACCESS DENIED", 146, 12);
+  if (!stillMotion) requestAnimationFrame(drawAttract);
+}
+requestAnimationFrame(drawAttract);
+</script>
+</body>
+</html>

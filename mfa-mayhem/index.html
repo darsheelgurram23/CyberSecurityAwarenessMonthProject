@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MFA Mayhem – Cyber Defense Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="brand">
+  <span class="logo">🔒</span>
+  <div><h1>MFA MAYHEM</h1><p>CYBER DEFENSE ARCADE · GAME 2 OF 4 · TURN ON MFA</p></div>
+  <a class="home" href="../index.html">← All games</a>
+</header>
+<div class="hud">
+  <div id="score">SCORE 000000</div><div id="pts">⚡ 100</div><div id="wave">WAVE 1/5</div><div id="lives">🔒🔒🔒</div>
+</div>
+<div id="cards"></div>
+<div class="crt"><canvas id="game" width="900" height="450"></canvas></div>
+<p class="hint">PICK A DEFENDER (OR PRESS 1-4) · CLICK A TILE · CLICK ⚡ COINS FOR AUTH POINTS</p>
+<div id="modal" class="modal hidden"><div class="card"><h2 id="mt"></h2><p id="mb"></p><button id="mgo"></button></div></div>
+<script src="game.js"></script>
+</body>
+</html>

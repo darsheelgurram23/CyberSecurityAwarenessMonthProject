@@ -1,0 +1,236 @@
+/* HARD MODE FOR HACKERS: shared look for all four games.
+   Link this file from every game so the whole collection matches. */
+/* TEAM BRAND: all four games should share these 20 colors and two fonts. */
+:root {
+  --ink: #0d0a26;
+  --night: #14103a;
+  --indigo: #2a1f6b;
+  --purple: #6a3d9a;
+  --lavender: #c58bff;
+  --magenta: #b0247a;
+  --pop: #ff4f9a;
+  --blush: #ffb3d1;
+  --sun: #ffd23f;
+  --orange: #ff8a1c;
+  --cream: #fff3b0;
+  --paper: #ffffff;
+  --neon: #38e8ff;
+  --teal: #1282a2;
+  --deep: #0a5c78;
+  --abyss: #083f5e;
+  --safe: #35e89b;
+  --danger: #ff4d5e;
+  --skin: #f2b28a;
+  --wood: #8a4b2a;
+  --pixel-font: "Press Start 2P", "Courier New", monospace;
+  --body-font: "Atkinson Hyperlegible", Verdana, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--paper);
+  font-family: var(--body-font);
+  font-size: 18px;
+  line-height: 1.5;
+  background-color: var(--ink);
+  background-image:
+    linear-gradient(var(--indigo) 4px, transparent 4px),
+    linear-gradient(90deg, var(--indigo) 4px, transparent 4px);
+  background-size: 48px 48px;
+}
+
+/* The notched pixel frame is used on every panel. */
+.frame {
+  --frame: var(--neon);
+  margin: 4px;
+  background: var(--indigo);
+  box-shadow: 0 -4px 0 var(--frame), 0 4px 0 var(--frame), -4px 0 0 var(--frame), 4px 0 0 var(--frame), 8px 8px 0 var(--ink);
+}
+
+/* The arcade cabinet */
+.cabinet {
+  max-width: 1000px;
+  margin: 16px auto;
+  padding: 0 16px 20px;
+  background: var(--magenta);
+  box-shadow: 0 -6px 0 var(--pop), 0 6px 0 var(--pop), -6px 0 0 var(--pop), 6px 0 0 var(--pop), 14px 14px 0 var(--ink);
+}
+
+.marquee { display: flex; gap: 20px; align-items: center; justify-content: center; padding: 20px 0 14px; }
+.marquee canvas { width: 88px; image-rendering: pixelated; }
+.marquee canvas:last-child { transform: scaleX(-1); }
+.marquee h1 {
+  margin: 0;
+  font: 400 clamp(1.25rem, 5vw, 2.5rem)/1.3 var(--pixel-font);
+  color: var(--sun);
+  text-transform: uppercase;
+  text-shadow: 4px 4px 0 var(--ink), 8px 8px 0 var(--purple);
+}
+
+/* Marquee lights: evenly spaced flat squares */
+.lights {
+  height: 12px;
+  margin-bottom: 14px;
+  background-image: linear-gradient(90deg, var(--sun) 12px, transparent 12px);
+  background-size: 24px 12px;
+  animation: chase .8s steps(2) infinite;
+}
+@keyframes chase { to { background-position: 24px 0; } }
+
+/* CRT screen */
+.bezel { padding: 14px; background: var(--ink); }
+.screen {
+  position: relative;
+  overflow: hidden;
+  min-height: 500px;
+  padding: 14px;
+  background: var(--night);
+}
+.screen::after {   /* Scanlines */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, var(--ink) 0 2px, transparent 2px 6px);
+  opacity: .22;
+}
+.bezel.shake { animation: shake .24s linear; }
+@keyframes shake {
+  25% { transform: translate(-10px, 4px); }
+  50% { transform: translate(10px, -4px); }
+  75% { transform: translate(-6px, 2px); }
+}
+#flashLayer { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; }
+#flashLayer.hit { background: var(--paper); animation: flash .16s linear; }
+#flashLayer.hurt { background: var(--danger); animation: flash .24s linear; }
+@keyframes flash { from { opacity: .75; } to { opacity: 0; } }
+
+/* Coins and score numbers */
+.coin {
+  position: absolute;
+  z-index: 6;
+  width: 16px;
+  height: 16px;
+  background: var(--sun);
+  box-shadow: inset -4px -4px 0 var(--orange), 0 0 0 4px var(--ink);
+  pointer-events: none;
+  animation: coin .7s ease-out forwards;
+}
+@keyframes coin {
+  30% { transform: translate(calc(var(--dx) * .5), var(--dy)); }
+  to { transform: translate(var(--dx), 220px); opacity: 0; }
+}
+.score-pop {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 34%;
+  font: 400 2.2rem var(--pixel-font);
+  color: var(--sun);
+  text-shadow: 4px 4px 0 var(--ink);
+  pointer-events: none;
+  animation: pop .75s ease-out forwards;
+}
+@keyframes pop {
+  from { transform: translate(-50%, 0) scale(.6); }
+  25% { transform: translate(-50%, -10px) scale(1.25); }
+  to { transform: translate(-50%, -60px) scale(1); opacity: 0; }
+}
+
+/* Score bar */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font: 400 .68rem/1.7 var(--pixel-font);
+  text-transform: uppercase;
+}
+.hud span { color: var(--pop); }
+.hud b { display: block; font-weight: 400; color: var(--paper); font-size: 1.15rem; text-shadow: 3px 3px 0 var(--ink); }
+.hud b.flash { color: var(--sun); }
+.pips { display: flex; gap: 4px; margin-top: 6px; }
+.pips i { width: 10px; height: 10px; background: var(--indigo); }
+.pips i.on { background: var(--sun); }
+.hud-tools { display: flex; gap: 12px; align-items: center; }
+
+/* Buttons */
+button {
+  font: 400 .82rem/1.5 var(--pixel-font);
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--sun);
+  border: 0;
+  padding: 13px 18px;
+  box-shadow: 0 -4px 0 var(--ink), -4px 0 0 var(--ink), 4px 0 0 var(--ink), 0 10px 0 var(--ink), inset 0 -6px 0 var(--orange);
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: var(--cream); }
+button:active:not(:disabled) { transform: translateY(4px); }
+button:focus-visible, a:focus-visible {
+  outline: 4px solid var(--neon);
+  outline-offset: 6px;
+}
+h2:focus { outline: none; }
+
+/* Big round cabinet buttons */
+.arcade-btn {
+  flex: none;
+  width: 124px;
+  height: 124px;
+  padding: 0;
+  font-size: .9rem;
+  border-radius: 50%;
+  box-shadow: inset 0 -10px 0 var(--orange), 0 0 0 6px var(--ink), 0 0 0 12px var(--purple), 0 10px 0 12px var(--ink);
+}
+.arcade-btn.real { background: var(--safe); box-shadow: inset 0 -10px 0 var(--deep), 0 0 0 6px var(--ink), 0 0 0 12px var(--purple), 0 10px 0 12px var(--ink); }
+.arcade-btn.phish { background: var(--danger); box-shadow: inset 0 -10px 0 var(--magenta), 0 0 0 6px var(--ink), 0 0 0 12px var(--purple), 0 10px 0 12px var(--ink); }
+.arcade-btn.real:hover, .arcade-btn.phish:hover { background: var(--cream); }
+
+
+/* Collection name above each game's title */
+.presented {
+  margin: 0;
+  padding-top: 16px;
+  font: 400 .62rem/1.6 var(--pixel-font);
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+.presented + .marquee { padding-top: 8px; }
+
+/* The button back to the arcade menu */
+.menu-link, .tool-btn {
+  display: inline-block;
+  padding: 6px 8px;
+  font: 400 .58rem/1.5 var(--pixel-font);
+  text-decoration: none;
+  text-transform: uppercase;
+  color: var(--neon);
+  background: var(--night);
+  box-shadow: 0 0 0 3px var(--neon);
+  cursor: pointer;
+}
+.menu-link:hover, .tool-btn:hover { color: var(--ink); background: var(--neon); }
+
+@media (max-width: 760px) {
+  body { font-size: 17px; }
+  .cabinet { margin: 6px; padding: 0 8px 12px; }
+  .marquee canvas { display: none; }
+  .bezel { padding: 6px; }
+  .screen { padding: 10px; }
+  .hud b { font-size: .9rem; }
+  .arcade-btn { width: 104px; height: 104px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lights, #startBtn, .bezel.shake, #flashLayer.hit, #flashLayer.hurt { animation: none; }
+  .coin, .score-pop { display: none; }
+}

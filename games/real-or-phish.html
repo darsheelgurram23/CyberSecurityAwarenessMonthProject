@@ -1,0 +1,1712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real or Phish? | Hard Mode for Hackers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/brand.css">
+<style>
+  /* Title screen */
+  .title-screen { padding: 22px 12px 26px; text-align: center; }
+  .title-screen h2 {
+    margin: 0 0 14px;
+    font: 400 clamp(.95rem, 3.2vw, 1.5rem)/1.6 var(--pixel-font);
+    color: var(--neon);
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+  .title-screen .hi { font: 400 .8rem var(--pixel-font); color: var(--sun); margin: 24px auto; }
+  #startBtn { margin-top: 8px; padding: 18px 24px; font-size: 1rem; animation: blink 1.1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+
+  /* Rules */
+  .rules { max-width: 66ch; margin: 0 auto; text-align: left; }
+  .rules h3 { margin: 22px 0 10px; font: 400 .8rem/1.6 var(--pixel-font); text-transform: uppercase; color: var(--sun); }
+  .rules ol { margin: 0; padding-left: 26px; }
+  .rules li { margin-bottom: 7px; }
+  .rules li::marker { color: var(--pop); font-weight: 700; }
+  .fish-key { display: grid; gap: 12px; }
+  .fish-row { --frame: var(--neon); display: grid; grid-template-columns: 100px 1fr; gap: 12px; align-items: center; padding: 8px 10px; }
+  .fish-row canvas { justify-self: center; image-rendering: pixelated; }
+  .fish-row b { color: var(--frame); }
+
+  /* Lake scene */
+  .scene { position: relative; overflow: hidden; box-shadow: 0 0 0 4px var(--ink); }
+  #lakeView {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 200 / 115;
+    image-rendering: pixelated;
+    cursor: none;
+    touch-action: manipulation;
+  }
+  #lakeView:focus { outline: none; }
+
+  .float-text {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    font: 400 1.05rem var(--pixel-font);
+    text-shadow: 3px 3px 0 var(--ink), -3px 3px 0 var(--ink), 3px -3px 0 var(--ink), -3px -3px 0 var(--ink);
+    pointer-events: none;
+    animation: floatUp .6s ease-out forwards;
+  }
+  @keyframes floatUp { to { transform: translate(-50%, -220%); opacity: 0; } }
+
+  .tip {
+    position: absolute;
+    right: 3%;
+    top: 12px;
+    width: min(46%, 340px);
+    padding: 12px 16px;
+    color: var(--ink);
+    background: var(--paper);
+    box-shadow: 0 -4px 0 var(--ink), 0 4px 0 var(--ink), -4px 0 0 var(--ink), 4px 0 0 var(--ink), 8px 8px 0 var(--ink);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  .lake-note {
+    min-height: 2.6em;
+    margin: 16px 8px 6px;
+    font: 400 .76rem/1.8 var(--pixel-font);
+    text-align: center;
+    color: var(--sun);
+  }
+
+  #inbox, #end, .result, .menu { animation: popIn .12s ease-out; }
+  @keyframes popIn { from { transform: scale(.94); opacity: 0; } }
+
+  /* Email screen */
+  .desk { display: grid; grid-template-columns: 1fr 270px; gap: 22px; align-items: start; }
+
+  .timer { display: flex; gap: 12px; align-items: center; padding: 12px 18px 0; }
+  .timer b { min-width: 3.2em; font: 400 1rem var(--pixel-font); color: var(--sun); }
+  .timer-track { flex: 1; height: 16px; padding: 4px; background: var(--ink); }
+  .timer-fill {
+    height: 100%;
+    background-image: linear-gradient(90deg, var(--sun) 12px, transparent 12px);
+    background-size: 16px 8px;
+  }
+  .timer.low b { color: var(--danger); animation: blink .5s steps(2) infinite; }
+  .timer.low .timer-fill { background-image: linear-gradient(90deg, var(--danger) 12px, transparent 12px); }
+
+  .email-head { padding: 14px 18px; border-bottom: 4px dashed var(--frame); }
+  .email-head h2 { margin: 0 0 6px; font-size: 1.35rem; line-height: 1.25; color: var(--sun); }
+  .email-head p { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+  .email-head .caught { margin-bottom: 8px; font: 400 .62rem/1.7 var(--pixel-font); text-transform: uppercase; color: var(--frame); }
+  .email-body { padding: 14px 18px; }
+  .email-body p { margin: 0 0 12px; }
+  .link-text { color: var(--neon); text-decoration: underline; font-weight: 700; }
+  .link-preview {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    background: var(--ink);
+    font-size: .95rem;
+    overflow-wrap: anywhere;
+  }
+  .attachment { display: inline-block; padding: 7px 12px; border: 4px solid var(--sun); font-weight: 700; }
+
+  .side { display: grid; gap: 22px; }
+  .box { --frame: var(--pop); padding: 14px; }
+  .box h3 { margin: 0 0 12px; font: 400 .72rem/1.5 var(--pixel-font); text-transform: uppercase; color: var(--sun); }
+  .box ul { margin: 0; padding: 0; list-style: none; font-size: .92rem; }
+  .box li { margin-bottom: 7px; overflow-wrap: anywhere; }
+  .box li span { display: block; font-weight: 700; color: var(--neon); }
+  .box p { margin: 8px 0 0; font-size: 1rem; }
+  .box button { width: calc(100% - 8px); margin: 4px 4px 8px; padding: 10px 4px; font-size: .58rem; }
+
+  .answer { margin-top: 26px; }
+  .answer h3 { margin: 0 0 22px; font: 400 .85rem/1.6 var(--pixel-font); text-transform: uppercase; color: var(--sun); }
+  .choices { display: flex; gap: 44px; padding: 0 18px 26px; }
+
+  /* Trick menu */
+  .menu { display: grid; gap: 4px; }
+  .menu button {
+    width: 100%;
+    padding: 11px 12px 11px 34px;
+    position: relative;
+    text-align: left;
+    font-size: .68rem;
+    color: var(--paper);
+    background: none;
+    box-shadow: none;
+  }
+  .menu button:hover, .menu button:focus-visible { color: var(--ink); background: var(--sun); outline: none; }
+  .menu button:hover::before, .menu button:focus-visible::before { content: "\25B6"; position: absolute; left: 10px; }
+
+  .result { --frame: var(--safe); padding: 14px 18px; }
+  .result.miss { --frame: var(--danger); }
+  .result h3 { color: var(--safe); }
+  .result.miss h3 { color: var(--danger); }
+  .result p { margin: 0 0 10px; }
+  .result button { margin: 8px 4px 14px; }
+
+  /* End screen */
+  .end { padding: 10px 12px; }
+  .end h2 { margin: 0 0 14px; font: 400 clamp(1.05rem, 3.6vw, 1.7rem)/1.5 var(--pixel-font); text-transform: uppercase; color: var(--sun); text-shadow: 4px 4px 0 var(--ink); }
+  .end h3 { margin: 22px 0 10px; font: 400 .8rem/1.6 var(--pixel-font); text-transform: uppercase; color: var(--neon); }
+  .end .rank { font: 400 .85rem/1.7 var(--pixel-font); text-transform: uppercase; color: var(--pop); }
+  .end ol { padding-left: 24px; }
+  .end li { margin-bottom: 8px; }
+  .end small a { color: var(--neon); }
+  .end button { margin: 8px 4px 18px; }
+
+  @media (max-width: 760px) {
+    .desk { grid-template-columns: 1fr; }
+    .tip { width: 62%; top: 6px; font-size: .78rem; padding: 6px 8px; }
+    .lake-note { font-size: .66rem; }
+    .float-text { font-size: .7rem; }
+    .choices { gap: 38px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #inbox, #end, .result, .menu, .timer.low b { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="cabinet">
+  <p class="presented">Hard Mode for Hackers: Game 3 of 4</p>
+  <header class="marquee">
+    <canvas id="marqueeLeft" aria-hidden="true"></canvas>
+    <h1>Real or Phish?</h1>
+    <canvas id="marqueeRight" aria-hidden="true"></canvas>
+  </header>
+  <div class="lights" aria-hidden="true"></div>
+
+  <div class="bezel" id="bezel">
+    <div class="screen" id="screen">
+      <div id="flashLayer"></div>
+      <div class="hud" aria-label="Game stats">
+        <div><span>Score</span><b id="score">00000</b></div>
+        <div><span>Hi-score</span><b id="hiScore">00000</b></div>
+        <div><span>Catch</span><b id="catchCount">0/8</b><div class="pips" id="pips"></div></div>
+        <div><span>Daily streak</span><b id="streak">0</b></div>
+        <div class="hud-tools">
+          <a id="hubLink" class="menu-link" hidden>Menu</a>
+          <button id="soundBtn" class="tool-btn"></button>
+        </div>
+      </div>
+
+      <main>
+        <!-- SCREEN 0: title -->
+        <section id="title" class="title-screen" aria-label="Title screen">
+          <h2>Don't take the bait</h2>
+          <div class="rules">
+            <h3>How to play</h3>
+            <ol>
+              <li><b>Aim:</b> move the crosshair with your mouse or the arrow keys. On a phone, just tap.</li>
+              <li><b>Cast:</b> click, tap or press Space. Fish keep swimming while your line flies, so aim ahead of them.</li>
+              <li><b>Decide:</b> each fish carries an email. Choose Real or Phish before the timer runs out. Harder fish give you less time.</li>
+              <li><b>Name the trick:</b> if it's a phish, pick the trick the scammer used for 5 bonus points.</li>
+              <li><b>Finish:</b> catch 8 fish to end the round. Wrong answers and running out of time score 0. A hint costs 2 points.</li>
+            </ol>
+            <h3>Pick your fish</h3>
+            <div class="fish-key" id="fishKey"></div>
+          </div>
+          <p class="hi">Hi-score <span id="titleHi">00000</span></p>
+          <button id="startBtn">Press start</button>
+        </section>
+
+        <!-- SCREEN 1: the lake -->
+        <section id="lake" aria-label="Fishing lake" hidden>
+          <div class="scene">
+            <canvas id="lakeView" width="200" height="115" tabindex="0" role="img" aria-label="A fisher on a dock at sunset. Click the water, or use the arrow keys and Space, to cast at the fish."></canvas>
+            <div class="tip" id="tip" aria-live="off"></div>
+            <div id="floatLayer"></div>
+          </div>
+          <p class="lake-note" id="lakeMessage" aria-live="polite"></p>
+        </section>
+
+        <!-- SCREEN 2: the email you caught -->
+        <section id="inbox" aria-label="Email you caught" hidden>
+          <div class="desk">
+            <div>
+              <article class="frame" id="emailCard">
+                <div class="timer" id="timer" role="timer" aria-label="Time left to answer">
+                  <b id="timerText"></b>
+                  <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+                </div>
+                <div class="email-head">
+                  <p class="caught" id="emailCaught"></p>
+                  <h2 id="emailSubject" tabindex="-1"></h2>
+                  <p><b>From:</b> <span id="emailFrom"></span></p>
+                </div>
+                <div class="email-body" id="emailBody"></div>
+              </article>
+
+              <div class="answer" id="answerArea" aria-live="polite"></div>
+            </div>
+
+            <aside class="side">
+              <div class="box frame">
+                <h3>Hint box</h3>
+                <button id="hintBtn">Show hint (-2 points)</button>
+                <p id="hintText" hidden></p>
+              </div>
+              <div class="box frame">
+                <h3>Addresses you trust</h3>
+                <ul id="trustedList"></ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- SCREEN 3: results -->
+        <section id="end" class="end" hidden>
+          <h2 id="endTitle" tabindex="-1"></h2>
+          <p class="rank" id="endRank"></p>
+          <p id="endSummary"></p>
+          <p><b>Don't make it easy for them.</b> Scammers count on you being busy or distracted. Spotting phish is a small habit, and it only works if you repeat it. Come back tomorrow to keep your streak.</p>
+          <h3>What to do with a real phish</h3>
+          <ol>
+            <li><b>Recognize</b> the signs: urgent or emotional language, requests for personal or financial information, shortened links, and incorrect addresses or links.</li>
+            <li><b>Resist</b> clicking links or attachments, and report the message using your email app's report option.</li>
+            <li><b>Delete</b> it. Don't reply, and don't click "unsubscribe."</li>
+          </ol>
+          <p>If it might be real, don't use anything in the message. Type the company's site yourself, or contact the person another way.</p>
+          <button id="againBtn">Play again</button>
+          <p><small>Advice based on <a href="https://www.cisa.gov/secure-our-world/recognize-and-report-phishing" target="_blank" rel="noopener">CISA's Recognize and Report Phishing guide</a>. All companies and emails in this game are made up.</small></p>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/pixel.js"></script>
+<script>
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+const HUB_URL = "../index.html";   // The arcade menu
+const ROUND_SIZE = 8;        // Fish to catch in one round
+const CAST_MS = 380;         // Click to splash-down. Longer means aiming further ahead.
+const HIT_RANGE = 12;        // Extra forgiveness around each fish
+const TIP_EVERY_MS = 6000;   // How often the tip bubble changes
+const WATER_TOP = 190;       // Casts can't land above this line
+const LOW_TIME = 5;          // Seconds left when the timer turns red
+const HIT_STOP_MS = 70;      // The freeze on impact
+const REEL_MS = 520;
+
+const POINTS = { rightTactic: 5, hint: -2 };
+
+
+// Each fish type sets the look, speed, depth, points and email difficulty.
+// In the art: b body, s scales, l belly, f fin, e eye, w teeth, y lure.
+// One character is one game pixel, so every fish matches the same grid.
+const FISH_TYPES = {
+  easy: {
+    name: "Goldfish", label: "Easy", points: 10, seconds: 30,
+    speed: 60, lanes: [216, 262], wobble: 0,
+    colors: { b: C.sun, s: C.orange, l: C.cream, f: C.orange, e: C.ink },
+    about: "Big and slow. Clear-cut emails.",
+    art: [
+      "......ffff......",
+      "....bbbbbbbb....",
+      "..bbbbbbbbbbbb..",
+      ".beebbbbsbbsbbb.",
+      "bbeebbbsbbsbbbbb",
+      "bbbbbbbbbbbbbbbb",
+      ".lllllllllllllb.",
+      "..llllllllllll..",
+      "....lllffllll..."
+    ],
+    tail: ["..ff", ".fff", "fff.", "ff..", "fff.", ".fff", "..ff"]
+  },
+  medium: {
+    name: "Salmon", label: "Medium", points: 20, seconds: 20,
+    speed: 115, lanes: [318, 362], wobble: 4,
+    colors: { b: C.pop, s: C.magenta, l: C.blush, f: C.magenta, e: C.ink },
+    about: "Quicker. Emails that need a closer look.",
+    art: [
+      ".....ff......",
+      "..bbbbbbbbbb.",
+      ".bbbsbbsbbsb.",
+      "beebbbbbbbbbb",
+      "bbbbbbbbbbbbb",
+      ".lllllllllll."
+    ],
+    tail: ["..f", ".ff", "ff.", ".ff", "..f"]
+  },
+  hard: {
+    name: "Anglerfish", label: "Hard", points: 30, seconds: 15,
+    speed: 190, lanes: [414], wobble: 10,
+    colors: { b: C.lavender, s: C.purple, l: C.paper, f: C.purple, e: C.sun, w: C.paper, y: C.sun },
+    about: "Small, fast and deep. The trickiest emails.",
+    art: [
+      "y.......",
+      ".f.ff...",
+      "..bbbbb.",
+      ".eebbbbb",
+      "beebbbsb",
+      "wbwbbbbb",
+      ".lllllb."
+    ],
+    tail: [".f", "ff", ".f"]
+  }
+};
+
+/* =========================================================
+   GAME CONTENT
+   Change or add emails here. No other code has to change.
+   ========================================================= */
+const TACTICS = {
+  urgency: "Urgent or emotional pressure",
+  info: "Asks for personal or financial info",
+  link: "Bad sender address or link",
+  attachment: "Unexpected attachment",
+  prize: "Too good to be true"
+};
+
+const TRUSTED = [
+  ["Novabank", "novabank.com"],
+  ["Zipkart", "zipkart.com"],
+  ["Harborview High", "harborviewschools.org"],
+  ["City Library", "harborviewlibrary.org"],
+  ["Maya (friend)", "maya.chen@gmail.com"]
+];
+
+const TIPS = [
+  "A scary deadline is a reason to slow down.",
+  "Check the full email address, not just the name.",
+  "Lookalike links are a trap: amazan.com is not amazon.com.",
+  "Shortened links hide where you're really going.",
+  "Clean grammar isn't proof. AI can write a perfect scam.",
+  "Requests for passwords or bank details are a red flag.",
+  "Didn't expect an attachment? Don't open it.",
+  "Might be real? Type the company's site in yourself.",
+  "Never click \"unsubscribe\" on a phish. Just delete it.",
+  "Report it first, then delete it.",
+  "Strange message from a friend? Call or text them to check."
+];
+
+const EMAILS = [
+  /* ---------- PHISHING ---------- */
+  {
+    kind: "phish",
+    from: "Novabank Security <security@novabank-alerts.net>",
+    subject: "FINAL NOTICE: Your account closes in 24 hours",
+    difficulty: "easy",
+    body: ["We detected unusual activity. If you do not verify your account within 24 hours, it will be permanently closed and your funds frozen."],
+    link: { text: "Verify my account", url: "sh0rt.ly/nv82k" },
+    tactics: ["urgency", "link"],
+    hint: "Compare the sender's domain with your trusted list. Then read the link preview.",
+    why: "The deadline is there to rush you. The sender is novabank-alerts.net, not novabank.com, and the shortened link hides its destination."
+  },
+  {
+    kind: "phish",
+    from: "Zipkart Orders <orders@zipkart-billing.co>",
+    subject: "Your payment didn't go through",
+    difficulty: "medium",
+    body: ["We couldn't process the payment for your recent order. Sign in now to approve your payment method so your order isn't cancelled."],
+    link: { text: "zipkart.com/account", url: "zipkrat.com/verify" },
+    tactics: ["link", "urgency"],
+    hint: "The blue text and the real destination don't have to match. Read both letter by letter.",
+    why: "The link displays zipkart.com but goes to zipkrat.com. Signing in there would hand over your password. If you're worried, type zipkart.com yourself and check your orders."
+  },
+  {
+    kind: "phish",
+    from: "Principal Reyes <principal.reyes.harborview@gmail.com>",
+    subject: "Quick favor, are you free?",
+    difficulty: "medium",
+    body: ["I'm stuck in a meeting and need you to buy four $50 gift cards for a staff surprise. Send me the codes as soon as you can. Please keep this between us."],
+    tactics: ["urgency", "info", "link"],
+    hint: "Would your principal use a personal Gmail address and ask you to keep a secret?",
+    why: "School staff would use harborviewschools.org, not a personal Gmail. Gift card codes work like cash, and asking for secrecy stops you from checking. Contact the school directly."
+  },
+  {
+    kind: "phish",
+    from: "Future Leaders Fund <awards@scholarship-winners.info>",
+    subject: "Congratulations! You won a $5,000 scholarship",
+    difficulty: "easy",
+    body: ["You were selected for a $5,000 award. To receive your money, reply with your full name, date of birth, Social Security number and bank account number."],
+    tactics: ["prize", "info"],
+    hint: "Did you apply for this? What are they asking you to send?",
+    why: "You can't win something you never entered. No real award needs your Social Security and bank numbers by email."
+  },
+  {
+    kind: "phish",
+    from: "Accounts Team <billing@northline-invoices.biz>",
+    subject: "Invoice 4471 is overdue",
+    difficulty: "easy",
+    body: ["Please see the attached invoice and open it today to avoid a late fee."],
+    attachment: "Invoice_4471.zip",
+    tactics: ["attachment", "urgency"],
+    hint: "Do you know this company? Were you expecting a file from them?",
+    why: "An unexpected attachment from an unknown sender can infect your device. You don't have an account with this company, and the late fee is just pressure."
+  },
+  {
+    kind: "phish",
+    from: "Maya Chen <maya.chen@gmail.com>",
+    subject: "omg is this you??",
+    difficulty: "hard",
+    body: ["everyone is sharing this video of you, you need to see it right now"],
+    link: { text: "Watch video", url: "tiny-vid.co/x7Qa" },
+    tactics: ["link", "urgency"],
+    hint: "The address is right. Do the message and its link seem normal for Maya?",
+    why: "Real addresses can still be hacked. The shock is meant to make you click, and the short link hides its destination. Text or call Maya to check."
+  },
+  {
+    kind: "phish",
+    from: "Harborview IT Help Desk <support@harborview-schools-portal.com>",
+    subject: "Your password expires today",
+    difficulty: "hard",
+    body: [
+      "Hello, our records show that your school password expires at 5:00 PM today.",
+      "To keep access to your classes and grades, please confirm your current password using the secure page below. Thank you for your cooperation."
+    ],
+    link: { text: "Keep my password", url: "harborview-schools-portal.com/login" },
+    tactics: ["link", "urgency", "info"],
+    hint: "The writing is polished, so ignore that. Check the exact domain.",
+    why: "The spelling and grammar are perfect, which no longer proves anything. The domain isn't harborviewschools.org, and the deadline pushes you to give up your password."
+  },
+  {
+    kind: "phish",
+    from: "Flood Relief Now <donate@flood-relief-now.org>",
+    subject: "Families lost everything. They need you today.",
+    difficulty: "easy",
+    body: ["Thousands of children are sleeping outside tonight. Every minute counts. Reply with your card number, expiration date and security code so we can process your gift now."],
+    tactics: ["urgency", "info"],
+    hint: "A sad story isn't proof. How do they want your money?",
+    why: "Scammers use emotion as well as fear. No real charity needs card details in an email reply. To give, go to a charity's site yourself."
+  },
+
+  /* ---------- REAL ---------- */
+  {
+    kind: "real",
+    from: "City Library <notices@harborviewlibrary.org>",
+    subject: "Your hold is ready for pickup",
+    difficulty: "easy",
+    body: ["The book you requested is at the front desk. We'll keep it for 7 days."],
+    hint: "Check the domain. Is it asking you to do anything risky?",
+    why: "The domain matches your list, there's no link or attachment, and it asks for nothing."
+  },
+  {
+    kind: "real",
+    from: "Ms. Patel <apatel@harborviewschools.org>",
+    subject: "Course selection meeting",
+    difficulty: "easy",
+    body: ["Hi! Your course selection meeting is Thursday during lunch in Room 214. Bring your draft schedule. Reply if that time doesn't work."],
+    hint: "Check the domain and what she wants from you.",
+    why: "It comes from the real school domain and only asks for a normal reply. It doesn't ask for any private information."
+  },
+  {
+    kind: "real",
+    from: "Zipkart <orders@zipkart.com>",
+    subject: "Your order has shipped",
+    difficulty: "medium",
+    body: ["Your order is on the way and should arrive Friday. You can track it in your account."],
+    link: { text: "zipkart.com/orders", url: "zipkart.com/orders" },
+    hint: "Do the sender and the link both match your trusted list?",
+    why: "The sender and link both use zipkart.com, and it doesn't ask for payment or a password. If you ever doubt a link, type the site in yourself."
+  },
+  {
+    kind: "real",
+    from: "Novabank <alerts@novabank.com>",
+    subject: "Your monthly statement is ready",
+    difficulty: "medium",
+    body: ["Your statement is available. Sign in by typing novabank.com into your browser. We'll never ask for your password by email."],
+    hint: "Does this message need a link, a deadline or your details?",
+    why: "The sender is novabank.com. It has no deadline or link, and it tells you to go to the site yourself."
+  },
+  {
+    kind: "real",
+    from: "Coach Okafor <cokafor@harborviewschools.org>",
+    subject: "Practice moved to 4:00 TODAY",
+    difficulty: "medium",
+    body: ["Heads up: the gym is booked, so practice starts at 4:00 today instead of 3:00. See you there."],
+    hint: "It's urgent, but is it a threat? What does it ask you to do?",
+    why: "Urgent doesn't always mean phishing. This comes from the school domain, makes no threat, and asks for nothing except showing up."
+  },
+
+  /* ---------- MORE PHISHING ---------- */
+  {
+    kind: "phish",
+    from: "Novabank Fraud Team <fraud@novabank.security>",
+    subject: "Did you spend $842.19?",
+    difficulty: "medium",
+    body: ["We stopped a suspicious purchase on your card. If this wasn't you, reply right away with your card number and PIN so we can lock your card."],
+    tactics: ["urgency", "info", "link"],
+    hint: "Would your own bank need your PIN? Check the domain too.",
+    why: "No bank needs your PIN by email, and novabank.security isn't novabank.com. If you're worried, call the number on the back of your card."
+  },
+  {
+    kind: "phish",
+    from: "Harborview Athletics <tickets@harborview-athletics.com>",
+    subject: "Free homecoming tickets for students",
+    difficulty: "medium",
+    body: ["Claim your 2 free tickets! Sign in with your school email and password to reserve them."],
+    link: { text: "Claim tickets", url: "harborview-athletics.com/claim" },
+    tactics: ["prize", "info", "link"],
+    hint: "Does the domain match your school's? Why would tickets need your password?",
+    why: "Free tickets are the bait. The sender isn't harborviewschools.org, and nobody needs your school password to give you a ticket."
+  },
+  {
+    kind: "phish",
+    from: "Novabank <alerts@novabnak.com>",
+    subject: "Your statement is available",
+    difficulty: "hard",
+    body: ["Your latest statement is available online. Thank you for banking with us."],
+    link: { text: "View statement", url: "novabnak.com/statements" },
+    tactics: ["link"],
+    hint: "Nothing sounds wrong, so read the domain one letter at a time.",
+    why: "Two letters are swapped: novabnak.com, not novabank.com. Nothing else looks wrong, which is why this works. Type your bank's address yourself instead."
+  },
+  {
+    kind: "phish",
+    from: "Zipkart Refunds <refunds@zipkart.com.order-help.net>",
+    subject: "Your $38.20 refund is ready",
+    difficulty: "hard",
+    body: ["Good news! Your refund has been approved. Confirm your card details to receive it."],
+    link: { text: "Claim refund", url: "zipkart.com.order-help.net/refund" },
+    tactics: ["link", "info", "prize"],
+    hint: "Don't stop reading at zipkart.com. Look at how the address ends.",
+    why: "The address starts with zipkart.com, but the part that counts is the end: order-help.net. Check your orders by typing zipkart.com yourself."
+  },
+
+  /* ---------- MORE REAL ---------- */
+  {
+    kind: "real",
+    from: "City Library <notices@harborviewlibrary.org>",
+    subject: "Your library card expires in 3 days",
+    difficulty: "hard",
+    body: ["Renew your card by Friday to keep borrowing. You can renew at the front desk or online."],
+    link: { text: "harborviewlibrary.org/renew", url: "harborviewlibrary.org/renew" },
+    hint: "It has a deadline and a link. Do they match your list? Does it ask for anything private?",
+    why: "A deadline and a link can look suspicious, but the sender and link both match harborviewlibrary.org. It asks for nothing private and offers another way to renew."
+  },
+  {
+    kind: "real",
+    from: "Ms. Patel <apatel@harborviewschools.org>",
+    subject: "Field trip form, as discussed in class",
+    difficulty: "hard",
+    body: ["Here's the permission form I mentioned on Monday. Have a parent sign it and bring it back by Friday."],
+    attachment: "Field_Trip_Form.pdf",
+    hint: "Attachments aren't always bad. Is this one expected? Does the sender match?",
+    why: "The sender matches and she told you this form was coming. If an attachment ever surprises you, even from someone you know, ask them another way before opening it."
+  }
+];
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+let index = 0;         // How many fish were caught this round
+let score = 0;
+let email = null;      // The current email
+let caughtType = null; // The fish type that carried the current email
+let usedEmails = [];   // Emails already shown this round
+let usedHint = false;
+let phishCaught = 0;
+let phishMissed = 0;
+let falseAlarms = 0;
+let timeOuts = 0;      // Real emails that ran out of time
+let timeLeft = 0;      // Seconds left on this email. 0 means the timer is off.
+let timeTotal = 0;
+let lastTick = 0;
+let tipIndex = 0;
+let lakeState = "off"; // off, aiming, casting or reeling
+let fish = [];         // The fish swimming right now
+let lastFrame = 0;
+let freezeUntil = 0;   // Fish stop moving until this time, for impact
+let audio = null;      // Created on the first sound, after the player clicks
+let soundOn = load("rop-sound", "on") === "on";
+
+const SOUNDS = {
+  start: [392, 523, 659, 784],
+  cast: [330, 440],
+  hook: [880, 1047, 1319],
+  splash: [262, 196],
+  good: [523, 659, 784],
+  bad: [196, 147],
+  tick: [988],
+  win: [523, 659, 784, 1047]
+};
+
+const $ = (id) => document.getElementById(id);
+const SCENE = { width: 800, height: 460 };   // Game logic uses these units
+const GRID = 4;              // One screen pixel is 4 units
+const SURFACE = 180;         // The water line
+const HAND = { x: 172, y: 160 };
+const ROD_LENGTH = 112;
+const REST_ANGLE = -42;      // Degrees. The rod's resting position.
+const REST = { x: 255, y: 176 };
+const WINDUP_MS = 90;
+const SUN_X = 122;           // In screen pixels
+const ART_WIDTH = 200;
+const ART_HEIGHT = 115;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SPEED_SCALE = reduceMotion ? 0.6 : 1;
+let bobPosition = { ...REST };
+let aim = { x: 450, y: 300 };
+let rig = { angle: REST_ANGLE, bend: 0, sag: 0 };   // How the rod and line are posed
+let aimVisible = true;
+let trail = [];        // Recent hook positions, for the afterimage
+let particles = [];    // Sparks and splash drops
+let rings = [];        // Ripples
+let shake = 0;         // Screen shake strength inside the lake
+let lakeScale = 4;     // Real canvas pixels per art pixel
+const lake = $("lakeView").getContext("2d");
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function randomBetween(low, high) {
+  return low + Math.random() * (high - low);
+}
+
+function emailsLeft(typeKey) {
+  return EMAILS.filter((e) => e.difficulty === typeKey && !usedEmails.includes(e));
+}
+
+function showScreen(id) {
+  ["title", "lake", "inbox", "end"].forEach((name) => { $(name).hidden = name !== id; });
+}
+
+function updateHud() {
+  $("catchCount").textContent = `${index}/${ROUND_SIZE}`;
+  [...$("pips").children].forEach((pip, i) => pip.classList.toggle("on", i < index));
+  $("score").textContent = padScore(score);
+}
+
+
+function padScore(value) {
+  return String(value).padStart(5, "0");
+}
+
+function showBest() {
+  const best = padScore(load("rop-best", 0));
+  $("hiScore").textContent = best;
+  $("titleHi").textContent = best;
+}
+
+function flashScore() {
+  $("score").classList.add("flash");
+  setTimeout(() => $("score").classList.remove("flash"), 500);
+}
+
+function shakeScreen() {
+  $("bezel").classList.remove("shake");
+  void $("bezel").offsetWidth;   // Restarts the CSS animation
+  $("bezel").classList.add("shake");
+}
+
+// Plays a short retro tune: one square-wave beep per note.
+function play(name) {
+  if (!soundOn) return;
+  try {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    SOUNDS[name].forEach((frequency, i) => {
+      const beep = audio.createOscillator();
+      const volume = audio.createGain();
+      beep.type = "square";
+      beep.frequency.value = frequency;
+      volume.gain.value = 0.04;
+      beep.connect(volume).connect(audio.destination);
+      const startAt = audio.currentTime + i * 0.09;
+      beep.start(startAt);
+      beep.stop(startAt + 0.08);
+    });
+  } catch { /* play without sound */ }
+}
+
+function showSoundState() {
+  $("soundBtn").textContent = soundOn ? "Sound on" : "Sound off";
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  save("rop-sound", soundOn ? "on" : "off");
+  showSoundState();
+}
+
+function addPoints(amount) {
+  // A hint can reduce the points for this email, but never below zero.
+  score += Math.max(0, amount - (usedHint ? -POINTS.hint : 0));
+  usedHint = false;
+  updateHud();
+  flashScore();
+}
+
+function makeButton(text, className, onClick) {
+  const button = document.createElement("button");
+  button.textContent = text;
+  if (className) button.className = className;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+/* =========================================================
+   SAVED DATA: daily streak and best score
+   Browser storage can be blocked, so the game must work without it.
+   ========================================================= */
+function load(key, fallback) {
+  try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+}
+
+function save(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* play without saving */ }
+}
+
+function dateKey(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function currentStreak() {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const last = load("rop-last-day", "");
+  const stillAlive = last === dateKey(new Date()) || last === dateKey(yesterday);
+  return stillAlive ? Number(load("rop-streak", 0)) : 0;
+}
+
+function recordPlayToday() {
+  const today = dateKey(new Date());
+  if (load("rop-last-day", "") !== today) {
+    save("rop-streak", currentStreak() + 1);
+    save("rop-last-day", today);
+  }
+  $("streak").textContent = currentStreak();
+}
+
+/* =========================================================
+   SPRITES
+   Sprites are built with makeSprite from ../assets/pixel.js.
+   ========================================================= */
+
+function fishRows(type, frame) {
+  const tail = frame ? type.tail.slice(1, -1) : type.tail;
+  const gap = Math.round((type.art.length - tail.length) / 2);
+  return type.art.map((row, y) => row + (tail[y - gap] ?? ""));
+}
+
+function drawFishSprite(oneFish, now) {
+  const type = oneFish.type;
+  const frame = Math.floor(now / (oneFish.caught ? 60 : 120)) % 2;
+  const flashing = now < oneFish.flashUntil && Math.floor(now / 40) % 2 === 0;
+  const image = flashing ? type.sprites.white : type.sprites.frames[frame];
+  const flip = oneFish.direction === 1 ? -1 : 1;
+
+  lake.save();
+  lake.translate(oneFish.x / GRID, oneFish.y / GRID);
+  if (oneFish.hanging) lake.rotate(flip * Math.PI / 2);
+  lake.scale(flip, 1);
+  lake.drawImage(image, -Math.floor(type.art[0].length / 2) - 1, -Math.floor(type.art.length / 2) - 1);
+  lake.restore();
+}
+
+const SPRITES = {
+  fisher: makeSprite([
+    "....hhhhhhh.....",
+    "...hhhhhhhhh....",
+    "...hhhhhhhhh....",
+    "..ddddddddddddd.",
+    "....sssssssss...",
+    "....sssssssss...",
+    "....ssssseeds...",
+    "....ssssseeds...",
+    "....sssssssss...",
+    "....kkkkkkkkk...",
+    ".....vvvvvvv....",
+    "....tvvvvvvvv...",
+    "....tvvvvvvvv...",
+    "....tvvvvvvvv...",
+    "....tvvvvvvvv...",
+    ".....iiii.iii...",
+    ".....iiii.iii...",
+    ".....iii..iii..."
+  ], { h: C.pop, d: C.magenta, s: C.skin, k: C.orange, e: C.ink, v: C.neon, t: C.teal, i: C.indigo }),
+  bob: makeSprite([
+    ".ppp.",
+    ".ppp.",
+    ".www.",
+    ".www.",
+    "..w..",
+    "w.w..",
+    "www.."
+  ], { p: C.pop, w: C.paper }),
+  crate: makeSprite([
+    "bbbbbbbb",
+    "bwwwwwwb",
+    "bwbwwbwb",
+    "bwwbbwwb",
+    "bwwbbwwb",
+    "bwbwwbwb",
+    "bwwwwwwb",
+    "bbbbbbbb"
+  ], { b: C.wood, w: C.orange }),
+  bucket: makeSprite([
+    "gggggggg",
+    ".gtttttg",
+    ".gtttttg",
+    ".gtttttg",
+    "..ggggg."
+  ], { g: C.paper, t: C.neon })
+};
+
+function buildFishSprites() {
+  Object.values(FISH_TYPES).forEach((type) => {
+    type.width = type.art[0].length * GRID;
+    type.height = type.art.length * GRID;
+    type.sprites = {
+      frames: [makeSprite(fishRows(type, 0), type.colors), makeSprite(fishRows(type, 1), type.colors)],
+      white: makeSprite(fishRows(type, 0), type.colors, true)
+    };
+  });
+}
+
+/* =========================================================
+   THE BACKGROUND
+   Drawn once. Background art has no outlines and stays dim, so
+   anything with a dark outline is something that matters.
+   ========================================================= */
+function dither(paint, y, color) {
+  paint.fillStyle = color;
+  for (let row = 0; row < 2; row++) {
+    for (let x = (y + row) % 2; x < 200; x += 2) paint.fillRect(x, y + row, 1, 1);
+  }
+}
+
+function makeBackground() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 200;
+  canvas.height = 115;
+  const paint = canvas.getContext("2d");
+  const band = (y, height, color) => { paint.fillStyle = color; paint.fillRect(0, y, 200, height); };
+
+  // Sky
+  band(0, 16, C.night); band(16, 14, C.indigo); band(30, 15, C.purple);
+  dither(paint, 15, C.indigo); dither(paint, 29, C.purple);
+
+  // Stars on a steady rhythm
+  paint.fillStyle = C.lavender;
+  for (let x = 8; x < 130; x += 24) paint.fillRect(x, 4 + (x % 3) * 3, 1, 1);
+
+  // The sun is the only light in the scene
+  for (let y = -15; y <= 15; y++) {
+    const halfWidth = Math.round(Math.sqrt(225 - y * y));
+    paint.fillStyle = y === 2 || y === 3 || y === 7 || y === 8 || y === 11 ? C.orange : C.sun;
+    paint.fillRect(SUN_X - halfWidth, 32 + y, halfWidth * 2, 1);
+  }
+
+  // Hills
+  paint.fillStyle = C.indigo;
+  [[72, 38, 20], [84, 34, 12], [112, 39, 24], [122, 36, 12], [176, 37, 24], [186, 33, 14]].forEach(([x, y, w]) => {
+    paint.fillRect(x, y, w, 45 - y);
+  });
+
+  // Water gets darker with depth
+  band(45, 25, C.teal); band(70, 22, C.deep); band(92, 19, C.abyss); band(111, 4, C.night);
+  dither(paint, 69, C.deep); dither(paint, 91, C.abyss);
+  paint.fillStyle = C.neon;
+  paint.fillRect(0, 45, 200, 1);
+
+  // Depth markers in each fish's color
+  [[Object.values(FISH_TYPES)[0], 60], [Object.values(FISH_TYPES)[1], 84], [Object.values(FISH_TYPES)[2], 103]].forEach(([type, y]) => {
+    paint.fillStyle = type.colors.b;
+    paint.fillRect(196, y, 3, 3);
+  });
+
+  // Dock, on a repeating plank tile
+  paint.fillStyle = C.ink;
+  [12, 44].forEach((x) => paint.fillRect(x, 50, 6, 61));
+  paint.fillStyle = C.wood;
+  paint.fillRect(0, 47, 69, 4);
+  paint.fillStyle = C.ink;
+  paint.fillRect(0, 51, 69, 1);
+  for (let x = 7; x < 69; x += 8) paint.fillRect(x, 47, 1, 4);
+
+  paint.drawImage(SPRITES.crate, 2, 38);
+  return canvas;
+}
+
+/* =========================================================
+   DRAWING HELPERS
+   The art stays on a 200 x 115 grid, but the canvas really has far
+   more pixels than that, so sprites can move in tiny smooth steps.
+   ========================================================= */
+function fitLake() {
+  const shownWidth = $("lakeView").getBoundingClientRect().width;
+  if (!shownWidth) return;
+  lakeScale = Math.max(2, Math.floor(shownWidth * devicePixelRatio / ART_WIDTH));
+  $("lakeView").width = ART_WIDTH * lakeScale;
+  $("lakeView").height = ART_HEIGHT * lakeScale;
+}
+
+function pixel(x, y, color, size = 1, smooth = false) {
+  lake.fillStyle = color;
+  const snap = smooth ? (n) => n : Math.round;
+  lake.fillRect(snap(x / GRID), snap(y / GRID), size, size);
+}
+
+// Walks along a curve and paints one pixel at each step.
+function curve(start, control, end, color, size = 1, skip = 1) {
+  const steps = Math.ceil(Math.hypot(end.x - start.x, end.y - start.y) / GRID) + 6;
+  for (let i = 0; i <= steps; i += skip) {
+    const t = i / steps;
+    const x = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x;
+    const y = (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * control.y + t * t * end.y;
+    pixel(x, y, color, size);
+  }
+}
+
+function drawWater(now) {
+  const beat = Math.floor(now / 400);
+
+  // Wave marks on a repeating spacing
+  [[52, C.neon], [60, C.neon], [78, C.teal], [84, C.teal]].forEach(([y, color], row) => {
+    lake.fillStyle = color;
+    for (let x = 72 + (beat + row) % 2 * 4 + row * 8; x < 200; x += 28) lake.fillRect(x, y, 6, 1);
+  });
+
+  // The sun's reflection
+  lake.fillStyle = C.sun;
+  [[47, 30], [50, 22], [53, 26], [56, 12]].forEach(([y, width], row) => {
+    if ((beat + row) % 3 !== 0) lake.fillRect(SUN_X - width / 2, y, width, 1);
+  });
+
+  // Two weeds and two bubbles
+  lake.fillStyle = C.safe;
+  [90, 150].forEach((x, i) => {
+    for (let y = 0; y < 6; y++) lake.fillRect(x + ((y + beat + i) % 4 < 2 ? 0 : 1), 110 - y * 2, 1, 2);
+  });
+  lake.fillStyle = C.neon;
+  [93, 153].forEach((x, i) => lake.fillRect(x, 110 - (now / 45 + i * 20) % 40, 1, 1));
+}
+
+function drawDockItems() {
+  lake.drawImage(SPRITES.bucket, 44, 40);
+  // One fish tail in the bucket for each catch
+  const tails = [C.sun, C.pop, C.lavender, C.sun, C.pop, C.lavender, C.sun, C.pop];
+  for (let i = 0; i < index; i++) {
+    lake.fillStyle = tails[i];
+    lake.fillRect(45 + (i % 4) * 2, 39 - (i > 3 ? 2 : 0), 1, 2);
+  }
+}
+
+function drawFisher() {
+  const tip = rodTip();
+  lake.drawImage(SPRITES.fisher, 22, 29);
+  // Arm, then a thick outlined rod. The bend comes from rig.bend.
+  const bendPoint = {
+    x: (HAND.x + tip.x) / 2 - rig.bend * 10,
+    y: (HAND.y + tip.y) / 2 - 8 - rig.bend * 26
+  };
+  curve({ x: 142, y: 156 }, { x: 156, y: 164 }, HAND, C.ink, 3);
+  curve({ x: 146, y: 156 }, { x: 158, y: 164 }, HAND, C.skin, 2);
+  curve(HAND, bendPoint, tip, C.ink, 3);
+  curve({ x: HAND.x + GRID, y: HAND.y + GRID }, bendPoint, { x: tip.x + GRID, y: tip.y + GRID }, C.cream, 1);
+}
+
+function drawLine() {
+  const tip = rodTip();
+  const end = { x: bobPosition.x, y: bobPosition.y - 28 };
+  const sag = { x: (tip.x + end.x) / 2, y: (tip.y + end.y) / 2 + rig.sag };
+  curve(tip, sag, end, C.paper);
+}
+
+function drawHook() {
+  trail.forEach((spot, i) => {
+    if (i % 2 === 0) pixel(spot.x, spot.y - 16, i > 3 ? C.neon : C.teal, 2, true);
+  });
+  lake.drawImage(SPRITES.bob, bobPosition.x / GRID - 3, bobPosition.y / GRID - 7);
+}
+
+function drawAimTools() {
+  if (!aimVisible) return;
+  const tip = rodTip();
+  const control = { x: (tip.x + aim.x) / 2, y: Math.min(tip.y, aim.y) - 70 };
+  curve(tip, control, aim, C.cream, 1, 4);
+
+  const x = aim.x / GRID;
+  const y = aim.y / GRID;
+  const bars = [[-6, 0, 4, 1], [3, 0, 4, 1], [0, -6, 1, 4], [0, 3, 1, 4], [0, 0, 1, 1]];
+  lake.fillStyle = C.ink;
+  bars.forEach(([bx, by, w, h]) => lake.fillRect(x + bx - 1, y + by - 1, w + 2, h + 2));
+  lake.fillStyle = C.sun;
+  bars.forEach(([bx, by, w, h]) => lake.fillRect(x + bx, y + by, w, h));
+}
+
+function drawEffects() {
+  rings.forEach((ring) => {
+    const radius = ring.size + ring.age / 24;
+    lake.fillStyle = C.paper;
+    for (let i = 0; i < 16; i++) {
+      const angle = i / 16 * Math.PI * 2;
+      lake.fillRect(
+        ring.x / GRID + Math.cos(angle) * radius,
+        ring.y / GRID + Math.sin(angle) * radius * 0.4, 1, 1
+      );
+    }
+  });
+  particles.forEach((p) => pixel(p.x, p.y, p.color, p.size, true));
+}
+
+function drawLake(now) {
+  const shakeX = shake > 0.5 ? (Math.random() - 0.5) * shake : 0;
+  const shakeY = shake > 0.5 ? (Math.random() - 0.5) * shake : 0;
+  lake.setTransform(lakeScale, 0, 0, lakeScale, 0, 0);
+  lake.imageSmoothingEnabled = false;
+  lake.save();
+  lake.translate(shakeX, shakeY);
+  lake.drawImage(background, 0, 0);
+  drawWater(now);
+  fish.filter((f) => !f.caught).forEach((f) => drawFishSprite(f, now));
+  drawDockItems();
+  drawAimTools();
+  drawFisher();
+  drawLine();
+  fish.filter((f) => f.caught).forEach((f) => drawFishSprite(f, now));
+  drawHook();
+  drawEffects();
+  lake.restore();
+}
+
+/* =========================================================
+   FISH
+   ========================================================= */
+function addFish(typeKey) {
+  const type = FISH_TYPES[typeKey];
+  const taken = fish.filter((f) => f.typeKey === typeKey).map((f) => f.baseY);
+  const baseY = type.lanes.find((lane) => !taken.includes(lane));
+  fish.push({
+    typeKey, type, baseY,
+    x: randomBetween(40, SCENE.width - 40),
+    y: baseY,
+    direction: Math.random() < 0.5 ? -1 : 1,
+    caught: false,
+    hanging: false,
+    flashUntil: 0
+  });
+}
+
+function removeFish(oneFish) {
+  fish = fish.filter((f) => f !== oneFish);
+}
+
+// Keeps the lake stocked, but never with fish that have no emails left.
+function fillLake() {
+  Object.entries(FISH_TYPES).forEach(([typeKey, type]) => {
+    const wanted = Math.min(type.lanes.length, emailsLeft(typeKey).length);
+    let ofType = fish.filter((f) => f.typeKey === typeKey);
+    while (ofType.length > wanted) {
+      removeFish(ofType.pop());
+    }
+    while (ofType.length < wanted) {
+      addFish(typeKey);
+      ofType = fish.filter((f) => f.typeKey === typeKey);
+    }
+  });
+}
+
+function moveFish(oneFish, seconds, now) {
+  if (oneFish.caught) {
+    oneFish.x = bobPosition.x;
+    oneFish.y = bobPosition.y + (oneFish.hanging ? oneFish.type.width / 2 : 0);
+    return;
+  }
+  oneFish.x += oneFish.type.speed * SPEED_SCALE * oneFish.direction * seconds;
+  oneFish.y = oneFish.baseY + Math.sin(now / 300 + oneFish.baseY) * oneFish.type.wobble;
+  if (oneFish.x < -70) { oneFish.x = -70; oneFish.direction = 1; }
+  if (oneFish.x > SCENE.width + 70) { oneFish.x = SCENE.width + 70; oneFish.direction = -1; }
+}
+
+function moveEffects(seconds) {
+  particles.forEach((p) => {
+    p.x += p.vx * seconds;
+    p.y += p.vy * seconds;
+    p.vy += 900 * seconds;
+    p.life -= seconds;
+  });
+  particles = particles.filter((p) => p.life > 0);
+  rings.forEach((ring) => { ring.age += seconds * 1000; });
+  rings = rings.filter((ring) => ring.age < 280);
+  shake *= 0.86;
+}
+
+function gameLoop(now) {
+  const seconds = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  updateTimer(seconds);
+  if (lakeState !== "off") {
+    if (now >= freezeUntil) fish.forEach((f) => moveFish(f, seconds, now));
+    moveEffects(seconds);
+    drawLake(now);
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+function fishAt(x, y) {
+  return fish.find((f) =>
+    Math.abs(f.x - x) <= f.type.width / 2 + HIT_RANGE &&
+    Math.abs(f.y - y) <= f.type.height / 2 + HIT_RANGE
+  );
+}
+
+/* =========================================================
+   AIMING AND CASTING
+   ========================================================= */
+function placeAim(x, y) {
+  aim.x = Math.max(0, Math.min(SCENE.width, x));
+  aim.y = Math.max(WATER_TOP, Math.min(SCENE.height, y));
+}
+
+function aimFromPointer(event) {
+  const box = $("lakeView").getBoundingClientRect();
+  placeAim(
+    (event.clientX - box.left) / box.width * SCENE.width,
+    (event.clientY - box.top) / box.height * SCENE.height
+  );
+}
+
+function handleKeys(event) {
+  if (lakeState === "off") return;
+  const moves = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] };
+  if (moves[event.key]) {
+    event.preventDefault();
+    placeAim(aim.x + moves[event.key][0], aim.y + moves[event.key][1]);
+  } else if ((event.key === " " || event.key === "Enter") && event.target.tagName !== "BUTTON") {
+    event.preventDefault();
+    cast();
+  }
+}
+
+/* The rod bends and swings from these numbers. */
+function rodTip() {
+  const radians = rig.angle * Math.PI / 180;
+  return {
+    x: HAND.x + Math.cos(radians) * ROD_LENGTH + rig.bend * 16,
+    y: HAND.y + Math.sin(radians) * ROD_LENGTH + rig.bend * 34
+  };
+}
+
+function placeBobber(x, y) {
+  // A splash each time the hook crosses the water surface.
+  const crossed = (bobPosition.y < SURFACE) !== (y < SURFACE);
+  bobPosition = { x, y };
+  if (crossed && lakeState !== "off") splash(x, SURFACE, 3);
+  if (lakeState === "casting") {
+    trail.push({ x, y });
+    if (trail.length > 8) trail.shift();
+  }
+}
+
+function resetRig() {
+  rig = { angle: REST_ANGLE, bend: 0, sag: 0 };
+  bobPosition = { ...REST };
+  trail = [];
+}
+
+function lerp(from, to, t) {
+  return from + (to - from) * t;
+}
+
+const easeOut = (t) => 1 - (1 - t) * (1 - t);
+const easeInOut = (t) => t * t * (3 - 2 * t);
+
+// Runs onFrame with t going from 0 to 1 over ms, then calls done.
+function animate(ms, onFrame, done) {
+  if (reduceMotion) {
+    setTimeout(() => { onFrame(1); done(); }, ms);
+    return;
+  }
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.max(0, Math.min(1, (now - startTime) / ms));
+    onFrame(t);
+    if (t < 1) requestAnimationFrame(step);
+    else done();
+  }
+  requestAnimationFrame(step);
+}
+
+/* =========================================================
+   IMPACT EFFECTS
+   ========================================================= */
+function burst(x, y, count, speed, colors, size = 1) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const force = speed * randomBetween(0.4, 1);
+    particles.push({
+      x, y, size,
+      vx: Math.cos(angle) * force,
+      vy: Math.sin(angle) * force - speed * 0.5,
+      color: colors[i % colors.length],
+      life: randomBetween(0.2, 0.45)
+    });
+  }
+}
+
+function splash(x, y, size) {
+  rings.push({ x, y, size, age: 0 });
+  burst(x, y, 8, 170, [C.paper, C.neon]);
+}
+
+function floatText(x, y, text, color) {
+  const label = document.createElement("div");
+  label.className = "float-text";
+  label.textContent = text;
+  label.style.color = color;
+  label.style.left = `${Math.max(12, Math.min(88, x / SCENE.width * 100))}%`;
+  label.style.top = `${Math.max(14, (y - 30) / SCENE.height * 100)}%`;
+  $("floatLayer").append(label);
+  setTimeout(() => label.remove(), 650);
+}
+
+function flashScreen(kind) {
+  const layer = $("flashLayer");
+  layer.className = "";
+  void layer.offsetWidth;   // Restarts the CSS animation
+  layer.className = kind;
+}
+
+function coinBurst(count, text) {
+  const box = $("screen");
+  for (let i = 0; i < count; i++) {
+    const coin = document.createElement("i");
+    coin.className = "coin";
+    coin.style.left = `${randomBetween(30, 70)}%`;
+    coin.style.top = "40%";
+    coin.style.setProperty("--dx", `${randomBetween(-180, 180)}px`);
+    coin.style.setProperty("--dy", `${randomBetween(-150, -60)}px`);
+    box.append(coin);
+    setTimeout(() => coin.remove(), 750);
+  }
+  if (text) {
+    const pop = document.createElement("div");
+    pop.className = "score-pop";
+    pop.textContent = text;
+    box.append(pop);
+    setTimeout(() => pop.remove(), 800);
+  }
+}
+
+function nextTip() {
+  $("tip").textContent = TIPS[tipIndex % TIPS.length];
+  tipIndex++;
+}
+
+function showAimTools(visible) {
+  aimVisible = visible;
+}
+
+/* A cast has two parts: swing the rod back, then flick the hook out. */
+function cast() {
+  if (lakeState !== "aiming") return;
+  lakeState = "casting";
+  showAimTools(false);
+  play("cast");
+  const target = { ...aim };
+
+  animate(WINDUP_MS, (t) => {
+    rig.angle = lerp(REST_ANGLE, -128, easeOut(t));
+    const tip = rodTip();
+    placeBobber(tip.x - 12, tip.y + 34);
+  }, () => {
+    const start = { ...bobPosition };
+    const distance = Math.hypot(target.x - start.x, target.y - start.y);
+
+    animate(CAST_MS - WINDUP_MS, (t) => {
+      rig.angle = lerp(-128, -24, easeOut(Math.min(1, t * 3)));
+      rig.sag = lerp(46, 20, t);
+      const height = Math.sin(t * Math.PI) * distance * 0.28;
+      placeBobber(lerp(start.x, target.x, t), lerp(start.y, target.y, t * t) - height);
+    }, checkForFish);
+  });
+}
+
+function checkForFish() {
+  trail = [];
+  const hooked = fishAt(bobPosition.x, bobPosition.y);
+  if (hooked) reelIn(hooked);
+  else missedCast();
+}
+
+/* Everything freezes for a beat on impact, then the fish fights and comes up. */
+function reelIn(hooked) {
+  const now = performance.now();
+  hooked.caught = true;
+  hooked.flashUntil = now + 200;
+  lakeState = "reeling";
+  freezeUntil = now + HIT_STOP_MS;
+  shake = 7;
+  play("hook");
+  flashScreen("hit");
+  burst(bobPosition.x, bobPosition.y, 18, 300, [C.sun, C.paper, C.pop], 2);
+  rings.push({ x: bobPosition.x, y: bobPosition.y, size: 5, age: 0 });
+  floatText(bobPosition.x, bobPosition.y, "Hooked!", C.sun);
+  $("lakeMessage").textContent = `Hooked a ${hooked.type.name}! Reeling in a ${hooked.type.label.toLowerCase()} email.`;
+
+  setTimeout(() => {
+    const hit = { ...bobPosition };
+    animate(130, (t) => {
+      rig.bend = easeOut(t);
+      rig.sag = 0;
+      placeBobber(hit.x + Math.sin(t * 20) * 6, hit.y);
+    }, () => {
+      const start = { ...bobPosition };
+      const startAngle = rig.angle;
+
+      animate(REEL_MS, (t) => {
+        const eased = easeInOut(t);
+        rig.angle = lerp(startAngle, REST_ANGLE - 8, eased);
+        rig.bend = lerp(1, 0.45, eased);
+        hooked.hanging = t > 0.35;
+        placeBobber(lerp(start.x, REST.x, eased), lerp(start.y, REST.y, eased));
+      }, () => {
+        setTimeout(() => {
+          caughtType = hooked.type;
+          removeFish(hooked);
+          showEmail(hooked.typeKey);
+        }, 130);
+      });
+    });
+  }, HIT_STOP_MS);
+}
+
+/* The empty line snaps back. */
+function missedCast() {
+  play("splash");
+  splash(bobPosition.x, bobPosition.y, 3);
+  floatText(bobPosition.x, bobPosition.y, "Miss", C.paper);
+  $("lakeMessage").textContent = "Missed. Aim ahead of the fish and try again.";
+
+  const start = { ...bobPosition };
+  const startAngle = rig.angle;
+  animate(260, (t) => {
+    const eased = easeInOut(t);
+    rig.angle = lerp(startAngle, REST_ANGLE, eased);
+    rig.sag = lerp(20, 0, eased);
+    placeBobber(lerp(start.x, REST.x, eased), lerp(start.y, REST.y, eased));
+  }, () => {
+    lakeState = "aiming";
+    resetRig();
+    showAimTools(true);
+  });
+}
+
+/* =========================================================
+   GAME FLOW
+   ========================================================= */
+function startRound() {
+  index = 0;
+  score = 0;
+  phishCaught = 0;
+  phishMissed = 0;
+  falseAlarms = 0;
+  timeOuts = 0;
+  usedHint = false;
+  usedEmails = [];
+  [...fish].forEach(removeFish);
+  fillLake();
+  updateHud();
+  play("start");
+  goToLake(`Catch ${ROUND_SIZE} fish. Bigger points swim deeper.`);
+}
+
+function goToLake(message) {
+  fillLake();
+  showScreen("lake");
+  fitLake();
+  resetRig();
+  showAimTools(true);
+  nextTip();
+  lakeState = "aiming";
+  $("lakeMessage").textContent = message;
+  $("lakeView").focus();
+}
+
+function showEmail(typeKey) {
+  lakeState = "off";
+  const choices = emailsLeft(typeKey);
+  email = choices[Math.floor(Math.random() * choices.length)];
+  usedEmails.push(email);
+  usedHint = false;
+
+  $("emailCard").style.setProperty("--frame", caughtType.colors.b);
+  $("emailCaught").textContent = `${caughtType.name}: ${caughtType.label}, ${caughtType.points} points`;
+  $("emailSubject").textContent = email.subject;
+  $("emailFrom").textContent = email.from;
+
+  const body = $("emailBody");
+  body.replaceChildren();
+  email.body.forEach((text) => {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = text;
+    body.append(paragraph);
+  });
+
+  // Links are plain text on purpose, so nothing in the game can be clicked.
+  if (email.link) {
+    const linkLine = document.createElement("p");
+    linkLine.className = "link-text";
+    linkLine.textContent = email.link.text;
+    const preview = document.createElement("p");
+    preview.className = "link-preview";
+    preview.textContent = `Link preview, what you'd see on hover: ${email.link.url}`;
+    body.append(linkLine, preview);
+  }
+  if (email.attachment) {
+    const file = document.createElement("span");
+    file.className = "attachment";
+    file.textContent = `Attachment: ${email.attachment}`;
+    body.append(file);
+  }
+
+  $("hintBtn").hidden = false;
+  $("hintText").hidden = true;
+  $("hintText").textContent = email.hint;
+
+  const area = $("answerArea");
+  area.replaceChildren();
+  const heading = document.createElement("h3");
+  heading.textContent = "Real or phish?";
+  const choiceRow = document.createElement("div");
+  choiceRow.className = "choices";
+  choiceRow.append(
+    makeButton("Real", "arcade-btn real", () => answerKind("real")),
+    makeButton("Phish", "arcade-btn phish", () => answerKind("phish"))
+  );
+  area.append(heading, choiceRow);
+
+  showScreen("inbox");
+  $("emailSubject").focus();
+  startTimer(caughtType.seconds);
+}
+
+function startTimer(seconds) {
+  timeLeft = seconds;
+  timeTotal = seconds;
+  lastTick = 0;
+  $("timer").hidden = false;
+  drawTimer();
+}
+
+function stopTimer() {
+  timeLeft = 0;
+  $("timer").hidden = true;
+}
+
+function drawTimer() {
+  const shown = Math.ceil(timeLeft);
+  $("timerText").textContent = `${shown}s`;
+  $("timerFill").style.width = `${timeLeft / timeTotal * 100}%`;
+  $("timer").classList.toggle("low", timeLeft <= LOW_TIME);
+}
+
+// Runs every frame. The game loop stops in a hidden tab, so the timer pauses too.
+function updateTimer(seconds) {
+  if (timeLeft <= 0) return;
+  timeLeft -= seconds;
+  if (timeLeft <= 0) {
+    timeRanOut();
+    return;
+  }
+  drawTimer();
+  const shown = Math.ceil(timeLeft);
+  if (shown <= 3 && shown !== lastTick) {
+    lastTick = shown;
+    play("tick");
+  }
+}
+
+function timeRanOut() {
+  stopTimer();
+  usedHint = false;
+  if (email.kind === "phish") {
+    phishMissed++;
+    showResult(false, "Time's up! That was a phish.");
+  } else {
+    timeOuts++;
+    showResult(false, "Time's up! This email was real.");
+  }
+}
+
+function showHint() {
+  usedHint = true;
+  $("hintBtn").hidden = true;
+  $("hintText").hidden = false;
+}
+
+function answerKind(choice) {
+  stopTimer();
+  const correct = choice === email.kind;
+
+  if (email.kind === "phish" && correct) {
+    askTactic();
+    return;
+  }
+
+  if (email.kind === "phish") {
+    phishMissed++;
+    usedHint = false;
+    showResult(false, "That was a phish. You let it through.");
+  } else if (correct) {
+    const before = score;
+    addPoints(caughtType.points);
+    coinBurst(8, `+${score - before}`);
+    showResult(true, `Correct, this one is real. +${score - before}`);
+  } else {
+    falseAlarms++;
+    usedHint = false;
+    showResult(false, "False alarm. This email is real.");
+  }
+}
+
+function askTactic() {
+  const area = $("answerArea");
+  area.replaceChildren();
+  const heading = document.createElement("h3");
+  heading.textContent = "Good catch. What's the main trick?";
+  const menu = document.createElement("div");
+  menu.className = "menu";
+  Object.entries(TACTICS).forEach(([key, label]) => {
+    menu.append(makeButton(label, "", () => answerTactic(key)));
+  });
+  area.append(heading, menu);
+  menu.querySelector("button").focus();
+}
+
+function answerTactic(key) {
+  phishCaught++;
+  const rightTactic = email.tactics.includes(key);
+  const points = caughtType.points + (rightTactic ? POINTS.rightTactic : 0);
+  const before = score;
+  addPoints(points);
+  const gained = score - before;
+  coinBurst(rightTactic ? 12 : 6, `+${gained}`);
+  const message = rightTactic
+    ? `Phish caught and trick named. +${gained}`
+    : `Phish caught, but that wasn't one of its tricks. +${gained}`;
+  showResult(rightTactic, message);
+}
+
+function showResult(good, headline) {
+  $("hintBtn").hidden = true;
+  $("hintText").hidden = false;   // The hint is free once the email is answered
+  play(good ? "good" : "bad");
+  if (!good) {
+    shakeScreen();
+    flashScreen("hurt");
+  }
+
+  const area = $("answerArea");
+  area.replaceChildren();
+  const box = document.createElement("div");
+  box.className = good ? "result frame" : "result frame miss";
+
+  const heading = document.createElement("h3");
+  heading.textContent = headline;
+  const why = document.createElement("p");
+  why.textContent = email.why;
+  box.append(heading, why);
+
+  if (email.kind === "phish") {
+    const tricks = document.createElement("p");
+    tricks.textContent = `Tricks used: ${email.tactics.map((t) => TACTICS[t]).join(", ")}.`;
+    const action = document.createElement("p");
+    action.innerHTML = "<b>In real life:</b> don't click or reply. Report it, then delete it.";
+    box.append(tricks, action);
+  }
+
+  index++;
+  updateHud();
+  const nextLabel = index < ROUND_SIZE ? "Next cast" : "See results";
+  const next = makeButton(nextLabel, "", index < ROUND_SIZE
+    ? () => goToLake(`${ROUND_SIZE - index} left. Cast again.`)
+    : showEnd);
+  box.append(next);
+  area.append(box);
+  next.focus();
+}
+
+function showEnd() {
+  recordPlayToday();
+
+  const best = Math.max(score, Number(load("rop-best", 0)));
+  save("rop-best", best);
+  showBest();
+
+  const totalPhish = phishCaught + phishMissed;
+  const mistakes = phishMissed + falseAlarms + timeOuts;
+  const clean = mistakes === 0;
+  $("endTitle").textContent = clean ? "Clean catch!" : phishMissed === 0 ? "No phish got through" : "Some phish got away";
+  $("endRank").textContent = `Rank: ${mistakes === 0 ? "Phish hunter" : mistakes <= 2 ? "Deckhand" : "Bait"}`;
+  play(clean ? "win" : "bad");
+  if (clean) coinBurst(24);
+  $("endSummary").textContent =
+    `Score: ${score} (best ${best}). You caught ${phishCaught} of ${totalPhish} phish` +
+    ` and raised ${falseAlarms} false ${falseAlarms === 1 ? "alarm" : "alarms"}.` +
+    (timeOuts ? ` You ran out of time on ${timeOuts} real ${timeOuts === 1 ? "email" : "emails"}.` : "");
+
+  showScreen("end");
+  $("endTitle").focus();
+}
+
+/* =========================================================
+   START UP
+   ========================================================= */
+buildFishSprites();
+const background = makeBackground();
+
+Object.values(FISH_TYPES).forEach((type) => {
+  const row = document.createElement("div");
+  row.className = "fish-row frame";
+  row.style.setProperty("--frame", type.colors.b);
+  const icon = copySprite(type.sprites.frames[0]);
+  icon.style.width = `${icon.width * 4}px`;
+  const words = document.createElement("div");
+  words.innerHTML = `<b>${type.name}: ${type.label}, ${type.points} points, ${type.seconds} seconds.</b> ${type.about}`;
+  row.append(icon, words);
+  $("fishKey").append(row);
+});
+
+["marqueeLeft", "marqueeRight"].forEach((id) => {
+  const image = FISH_TYPES.easy.sprites.frames[0];
+  const canvas = $(id);
+  canvas.width = image.width;
+  canvas.height = image.height;
+  canvas.getContext("2d").drawImage(image, 0, 0);
+});
+
+for (let i = 0; i < ROUND_SIZE; i++) {
+  $("pips").append(document.createElement("i"));
+}
+
+TRUSTED.forEach(([name, address]) => {
+  const item = document.createElement("li");
+  const label = document.createElement("span");
+  label.textContent = name;
+  item.append(label, address);
+  $("trustedList").append(item);
+});
+
+if (HUB_URL) {
+  $("hubLink").href = HUB_URL;
+  $("hubLink").hidden = false;
+}
+
+$("lakeView").addEventListener("pointermove", aimFromPointer);
+$("lakeView").addEventListener("click", (event) => { aimFromPointer(event); cast(); });
+document.addEventListener("keydown", handleKeys);
+$("hintBtn").addEventListener("click", showHint);
+$("againBtn").addEventListener("click", startRound);
+$("startBtn").addEventListener("click", startRound);
+$("soundBtn").addEventListener("click", toggleSound);
+
+$("streak").textContent = currentStreak();
+showSoundState();
+showBest();
+resetRig();
+window.addEventListener("resize", fitLake);
+setInterval(() => { if (lakeState === "aiming") nextTip(); }, TIP_EVERY_MS);
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
