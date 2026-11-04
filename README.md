@@ -1,4 +1,4 @@
-# Hard Mode for Hackers
+# Hard Mode for Hackerss
 
 Four arcade mini-games for Cybersecurity Awareness Month. Theme: "Don't Make It Easy for Them."
 
